@@ -87,7 +87,7 @@ public abstract class AbstractUserManager<P extends NightPlugin, U extends Abstr
         user.setName(player.getName());
         user.setLastOnline(System.currentTimeMillis());
 
-        this.plugin.runTaskAsync(task -> this.saveInDatabase(user));
+        this.plugin.getFoliaLib().getScheduler().runAsync(task -> this.saveInDatabase(user));
         this.cacheTemporary(user);
     }
 

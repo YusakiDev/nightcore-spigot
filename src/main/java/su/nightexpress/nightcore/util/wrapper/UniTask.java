@@ -1,5 +1,6 @@
 package su.nightexpress.nightcore.util.wrapper;
 
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 import org.jetbrains.annotations.NotNull;
 import su.nightexpress.nightcore.NightCorePlugin;
 
@@ -7,11 +8,11 @@ import su.nightexpress.nightcore.NightCorePlugin;
 public class UniTask {
 
     private final NightCorePlugin plugin;
-    private final Runnable        runnable;
+    private final Runnable runnable;
+    private final WrappedTask wrappedTask;
 
-    private long    interval;
+    private long interval;
     private boolean async;
-    private int     taskId;
 
     public UniTask(@NotNull NightCorePlugin plugin, @NotNull Runnable runnable) {
         this(plugin, runnable, 0L);
@@ -34,8 +35,7 @@ public class UniTask {
         this.runnable = runnable;
         this.interval = interval;
         this.async = async;
-
-        this.taskId = -1;
+        this.wrappedTask = null;
     }
 
     @Deprecated
@@ -61,7 +61,7 @@ public class UniTask {
     }
 
     public boolean isRunning() {
-        return this.taskId >= 0 && this.plugin.getScheduler().isCurrentlyRunning(this.taskId);
+        return this.wrappedTask != null && !this.wrappedTask.isCancelled();
     }
 
     public final void restart() {
@@ -70,22 +70,53 @@ public class UniTask {
     }
 
     public UniTask start() {
-        if (this.taskId >= 0 || this.interval <= 0L) return this;
+        if (this.wrappedTask != null || this.interval <= 0L) return this;
+
+        WrappedTask task = new WrappedTask() {
+            private boolean cancelled = false;
+            
+            @Override
+            public void cancel() {
+                cancelled = true;
+            }
+            
+            @Override
+            public boolean isCancelled() {
+                return cancelled;
+            }
+            
+            @Override
+            public org.bukkit.plugin.Plugin getOwningPlugin() {
+                return plugin;
+            }
+            
+            @Override
+            public boolean isAsync() {
+                return async;
+            }
+        };
 
         if (this.async) {
-            this.taskId = plugin.getScheduler().runTaskTimerAsynchronously(plugin, runnable, 0L, interval).getTaskId();
+            this.plugin.getFoliaLib().getScheduler().runTimerAsync(() -> {
+                if (!task.isCancelled()) {
+                    runnable.run();
+                }
+            }, 0L, this.interval);
+        } else {
+            this.plugin.getFoliaLib().getScheduler().runTimer(() -> {
+                if (!task.isCancelled()) {
+                    runnable.run();
+                }
+            }, 0L, this.interval);
         }
-        else {
-            this.taskId = plugin.getScheduler().runTaskTimer(plugin, runnable, 0L, interval).getTaskId();
-        }
+
         return this;
     }
 
     public boolean stop() {
-        if (this.taskId < 0) return false;
+        if (this.wrappedTask == null) return false;
 
-        this.plugin.getServer().getScheduler().cancelTask(this.taskId);
-        this.taskId = -1;
+        this.wrappedTask.cancel();
         return true;
     }
 }

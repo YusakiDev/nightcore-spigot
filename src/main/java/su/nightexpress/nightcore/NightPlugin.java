@@ -1,5 +1,6 @@
 package su.nightexpress.nightcore;
 
+import com.tcoded.folialib.FoliaLib;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +24,7 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
     public static final String ENGINE_FILE = "engine.yml";
 
     protected List<Runnable> postLoaders;
+    protected FoliaLib foliaLib;
 
     protected LangManager    langManager;
     protected CommandManager commandManager;
@@ -46,6 +48,8 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
         if (!this.isCore()) {
             Plugins.getCore().addChildren(this);
         }
+
+        this.foliaLib = new FoliaLib(this);
 
         long loadTook = System.currentTimeMillis();
         this.loadManagers();
@@ -161,8 +165,7 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
     }
 
     protected void unloadManagers() {
-        this.getScheduler().cancelTasks(this);  // Stop all plugin tasks.
-
+        this.foliaLib.getScheduler().cancelAllTasks();
         this.disable();
 
         AbstractMenu.clearAll(this);            // Close all GUIs.
@@ -203,6 +206,12 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
     public final CommandManager getCommandManager() {
         return this.commandManager;
     }
+
+    @NotNull
+    public FoliaLib getFoliaLib() {
+        return this.foliaLib;
+    }
+
 
     @Override
     public void extractResources(@NotNull String jarPath) {

@@ -123,4 +123,12 @@ public class UIListener extends AbstractListener<NightCore> {
 
         viewer.getMenu().onClose(viewer, event);
     }
+
+    private void handleInventoryClick(@NotNull InventoryClickEvent event) {
+        if (event.getClickedInventory() == null) return;
+
+        this.plugin.getFoliaLib().getScheduler().runNextTick(task -> {
+            // ... existing code ...
+        });
+    }
 }

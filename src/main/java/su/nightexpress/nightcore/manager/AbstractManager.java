@@ -5,11 +5,13 @@ import su.nightexpress.nightcore.NightCorePlugin;
 import su.nightexpress.nightcore.ui.menu.Menu;
 import su.nightexpress.nightcore.util.bukkit.NightTask;
 import su.nightexpress.nightcore.util.wrapper.UniTask;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public abstract class AbstractManager<P extends NightCorePlugin> extends SimpleManager<P> {
 
@@ -52,19 +54,19 @@ public abstract class AbstractManager<P extends NightCorePlugin> extends SimpleM
     }
 
     protected void addTask(@NotNull Runnable runnable, int interval) {
-        this.addTask(NightTask.create(plugin, runnable, interval));
+        this.addTask(NightTask.create(plugin, task -> runnable.run(), interval));
     }
 
     protected void addTask(@NotNull Runnable runnable, long interval) {
-        this.addTask(NightTask.create(plugin, runnable, interval));
+        this.addTask(NightTask.create(plugin, task -> runnable.run(), interval));
     }
 
     protected void addAsyncTask(@NotNull Runnable runnable, int interval) {
-        this.addTask(NightTask.createAsync(plugin, runnable, interval));
+        this.addTask(NightTask.createAsync(plugin, task -> runnable.run(), interval));
     }
 
     protected void addAsyncTask(@NotNull Runnable runnable, long interval) {
-        this.addTask(NightTask.createAsync(plugin, runnable, interval));
+        this.addTask(NightTask.createAsync(plugin, task -> runnable.run(), interval));
     }
 
     @Deprecated
