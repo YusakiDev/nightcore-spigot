@@ -3,6 +3,7 @@ package su.nightexpress.nightcore.util.bridge;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import su.nightexpress.nightcore.util.Version;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
@@ -22,7 +23,6 @@ import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
-import su.nightexpress.nightcore.util.Version;
 
 import java.util.function.Function;
 

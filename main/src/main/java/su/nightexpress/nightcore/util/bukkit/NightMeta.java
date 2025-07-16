@@ -12,7 +12,6 @@ import org.bukkit.inventory.meta.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import su.nightexpress.nightcore.Engine;
-import su.nightexpress.nightcore.bridge.spigot.SpigotBridge;
 import su.nightexpress.nightcore.bridge.wrap.NightProfile;
 import su.nightexpress.nightcore.config.FileConfig;
 import su.nightexpress.nightcore.config.Writeable;
@@ -332,7 +331,7 @@ public class NightMeta implements Writeable {
                 Engine.software().hideComponents(itemStack, this.hiddenComponents);
             }
             else {
-                SpigotBridge.hideComponentsByName(itemStack, this.hiddenComponents);
+                Engine.software().hideComponents(itemStack, this.hiddenComponents);
                 //ItemUtil.hideAttributes(itemStack);
             }
         }

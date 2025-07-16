@@ -19,6 +19,10 @@ import java.util.function.Consumer;
 public interface NightCorePlugin extends Plugin {
 
     //boolean isEngine();
+    
+    default boolean isCore() {
+        return this instanceof NightCore;
+    }
 
     void enable();
 

@@ -12,7 +12,6 @@ import su.nightexpress.nightcore.util.Plugins;
 import su.nightexpress.nightcore.util.Version;
 import su.nightexpress.nightcore.util.bridge.Software;
 import su.nightexpress.nightcore.bridge.paper.PaperBridge;
-import su.nightexpress.nightcore.bridge.spigot.SpigotBridge;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -69,7 +68,7 @@ public class Engine {
         Version version = Version.detect();
         if (version.isDropped()) return;
 
-        software = Version.isPaper() ? new PaperBridge() : new SpigotBridge();
+        software = new PaperBridge();
         software.initialize();
         core.info("Server version detected as " + version.getLocalized() + ". Using " + software.getName() + ".");
 

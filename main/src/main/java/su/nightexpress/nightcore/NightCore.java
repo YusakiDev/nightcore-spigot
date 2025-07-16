@@ -17,6 +17,11 @@ import su.nightexpress.nightcore.util.text.tag.Tags;
 public class NightCore extends NightPlugin implements ImprovedCommands {
 
     private CoreManager coreManager;
+    
+    public void addChildren(@NotNull NightPlugin plugin) {
+        // This method is implemented in Engine.handleEnable
+        // Just a placeholder for compatibility
+    }
 
     @Override
     @NotNull
