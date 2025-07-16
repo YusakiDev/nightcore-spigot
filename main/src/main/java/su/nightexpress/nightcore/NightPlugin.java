@@ -37,6 +37,8 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
 
     @Override
     public void onEnable() {
+        this.foliaLib = new FoliaLib(this);
+        
         if (!Engine.handleEnable(this)) {
             return;
         }
@@ -44,8 +46,6 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
         if (!this.isCore()) {
             Plugins.getCore().addChildren(this);
         }
-
-        this.foliaLib = new FoliaLib(this);
 
         long loadTook = System.currentTimeMillis();
         this.loadManagers();
@@ -156,7 +156,9 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
     }
 
     protected void unloadManagers() {
-        this.foliaLib.getScheduler().cancelAllTasks();
+        if (this.foliaLib != null) {
+            this.foliaLib.getScheduler().cancelAllTasks();
+        }
         this.disable();
 
         AbstractMenu.clearAll(this);            // Close all GUIs.

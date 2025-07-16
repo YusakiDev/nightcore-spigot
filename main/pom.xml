@@ -170,8 +170,15 @@
                             <artifactSet>
                                 <includes>
                                     <include>su.nightexpress.nightcore:*</include>
+                                    <include>com.tcoded:FoliaLib</include>
                                 </includes>
                             </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.tcoded.folialib</pattern>
+                                    <shadedPattern>su.nightexpress.nightcore.libs.folialib</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>
