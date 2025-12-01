@@ -118,6 +118,14 @@ public interface NightCorePlugin extends Plugin {
         this.getFoliaLib().getScheduler().runTimerAsync(consumer, delay, interval);
     }
 
+    default void runAtEntity(@NotNull org.bukkit.entity.Entity entity, @NotNull Consumer<WrappedTask> consumer) {
+        this.getFoliaLib().getScheduler().runAtEntity(entity, consumer);
+    }
+
+    default void runAtLocation(@NotNull org.bukkit.Location location, @NotNull Consumer<WrappedTask> consumer) {
+        this.getFoliaLib().getScheduler().runAtLocation(location, consumer);
+    }
+
     @NotNull
     @Deprecated
     default UniTask createTask(@NotNull Runnable runnable) {
