@@ -1,5 +1,6 @@
 package su.nightexpress.nightcore;
 
+import com.tcoded.folialib.FoliaLib;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -98,6 +99,9 @@ public interface NightCorePlugin extends Plugin {
     @NotNull MenuRegistry getMenuRegistry();
 
     @NotNull
+    FoliaLib getFoliaLib();
+
+    @NotNull
     default BukkitScheduler getScheduler() {
         return this.getServer().getScheduler();
     }
@@ -110,27 +114,27 @@ public interface NightCorePlugin extends Plugin {
     void runTask(@NotNull Runnable runnable);
 
     default void runTask(@NotNull Consumer<BukkitTask> consumer) {
-        this.getScheduler().runTask(this, consumer);
+        this.getFoliaLib().getScheduler().runNextTick(task -> consumer.accept(null));
     }
 
     default void runTaskAsync(@NotNull Consumer<BukkitTask> consumer) {
-        this.getScheduler().runTaskAsynchronously(this, consumer);
+        this.getFoliaLib().getScheduler().runAsync(task -> consumer.accept(null));
     }
 
     default void runTaskLater(@NotNull Consumer<BukkitTask> consumer, long delay) {
-        this.getScheduler().runTaskLater(this, consumer, delay);
+        this.getFoliaLib().getScheduler().runLater(() -> consumer.accept(null), delay);
     }
 
     default void runTaskLaterAsync(@NotNull Consumer<BukkitTask> consumer, long delay) {
-        this.getScheduler().runTaskLaterAsynchronously(this, consumer, delay);
+        this.getFoliaLib().getScheduler().runLaterAsync(() -> consumer.accept(null), delay);
     }
 
     default void runTaskTimer(@NotNull Consumer<BukkitTask> consumer, long delay, long interval) {
-        this.getScheduler().runTaskTimer(this, consumer, delay, interval);
+        this.getFoliaLib().getScheduler().runTimer(() -> consumer.accept(null), delay, interval);
     }
 
     default void runTaskTimerAsync(@NotNull Consumer<BukkitTask> consumer, long delay, long interval) {
-        this.getScheduler().runTaskTimerAsynchronously(this, consumer, delay, interval);
+        this.getFoliaLib().getScheduler().runTimerAsync(() -> consumer.accept(null), delay, interval);
     }
 
     @NotNull

@@ -112,6 +112,13 @@
         </dependency>
 
         <dependency>
+            <groupId>com.tcoded</groupId>
+            <artifactId>FoliaLib</artifactId>
+            <version>0.5.1</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>6.0.0</version>
@@ -289,9 +296,16 @@
                             <artifactSet>
                                 <includes>
                                     <include>su.nightexpress.nightcore:*</include>
+                                    <include>com.tcoded:FoliaLib</include>
                                     <!--<include>net.kyori:adventure-nbt</include>-->
                                 </includes>
                             </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.tcoded.folialib</pattern>
+                                    <shadedPattern>su.nightexpress.nightcore.libs.folialib</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>

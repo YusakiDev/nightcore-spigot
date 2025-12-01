@@ -13,6 +13,7 @@
         <module>bridge</module>
         <module>utils</module>
         <module>paper</module>
+        <module>spigot</module>
     </modules>
 
     <properties>
