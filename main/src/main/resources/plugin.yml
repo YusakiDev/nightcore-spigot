@@ -5,8 +5,6 @@ description: Plugin core
 author: NightExpress
 api-version: 1.20
 load: STARTUP
-folia-supported: true
 libraries:
-  - org.xerial:sqlite-jdbc:3.49.1.0
   - com.zaxxer:HikariCP:6.0.0
   - it.unimi.dsi:fastutil-core:8.5.13

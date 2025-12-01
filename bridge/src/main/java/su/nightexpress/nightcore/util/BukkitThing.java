@@ -12,17 +12,18 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import su.nightexpress.nightcore.bridge.common.NightKey;
 import su.nightexpress.nightcore.util.bridge.RegistryType;
 
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class BukkitThing {
 
+    @Deprecated
     public static final char DEFAULT_SEPARATOR = ':';
 
     @NotNull
@@ -30,17 +31,20 @@ public class BukkitThing {
         return Bukkit.getServer().getWorlds().stream().map(WorldInfo::getName).toList();
     }
 
+    @Deprecated
     private static boolean isValidNamespaceChar(char c) {
         return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
     }
 
+    @Deprecated
     private static boolean isValidKeyChar(char c) {
         return isValidNamespaceChar(c) || c == '/';
     }
 
     @NotNull
+    @Deprecated
     private static String validateNamespaceOrValue(@NotNull String str, @NotNull Predicate<Character> predicate) {
-        char[] chars = str.toLowerCase().toCharArray();
+        char[] chars = LowerCase.INTERNAL.apply(str).toCharArray();
 
         StringBuilder builder = new StringBuilder();
         for (char letter : chars) {
@@ -58,30 +62,38 @@ public class BukkitThing {
     }
 
     @NotNull
+    @Deprecated
     public static String validateNamespace(@NotNull String namespace) {
         return validateNamespaceOrValue(namespace, BukkitThing::isValidNamespaceChar);
     }
 
     @NotNull
+    @Deprecated
     public static String validateValue(@NotNull String value) {
         return validateNamespaceOrValue(value, BukkitThing::isValidKeyChar);
     }
 
     @NotNull
+    @Deprecated
     public static NamespacedKey parseKey(@NotNull String string) {
-        int index = string.indexOf(DEFAULT_SEPARATOR);
+        return NightKey.key(string).toBukkit();
+
+        /*int index = string.indexOf(DEFAULT_SEPARATOR);
         String namespace = index >= 1 ? string.substring(0, index) : NamespacedKey.MINECRAFT;
         String value = index >= 0 ? string.substring(index + 1) : string;
 
-        return parseKey(namespace, value);
+        return parseKey(namespace, value);*/
     }
 
     @NotNull
+    @Deprecated
     public static NamespacedKey parseKey(@NotNull String namespace, @NotNull String value) {
-        namespace = BukkitThing.validateNamespace(namespace);
+        return NightKey.key(namespace, value).toBukkit();
+
+        /*namespace = BukkitThing.validateNamespace(namespace);
         value = BukkitThing.validateValue(value);
 
-        return new NamespacedKey(namespace, value);
+        return new NamespacedKey(namespace, value);*/
     }
 
     @Nullable
@@ -109,9 +121,6 @@ public class BukkitThing {
     @NotNull
     @Deprecated
     public static <T extends Keyed> Set<T> allFromRegistry(@NotNull Registry<@NotNull T> registry) {
-        if (Version.isBehind(Version.V1_20_R2)) {
-            return StreamSupport.stream(registry.spliterator(), false).collect(Collectors.toSet());
-        }
         return registry.stream().collect(Collectors.toSet());
     }
 
@@ -132,12 +141,17 @@ public class BukkitThing {
 
     @Nullable
     public static <T extends Keyed> T getByString(@NotNull RegistryType<T> registryKey, @NotNull String string) {
-        return getByKey(registryKey, BukkitThing.parseKey(string));
+        return NightKey.parse(string).map(key -> getByKey(registryKey, key)).orElse(null);
     }
 
     @Nullable
     public static <T extends Keyed> T getByNamespaceValue(@NotNull RegistryType<T> registryKey, @NotNull String namespace, @NotNull String value) {
-        return getByKey(registryKey, BukkitThing.parseKey(namespace, value));
+        return NightKey.parse(namespace, value).map(key -> getByKey(registryKey, key)).orElse(null);
+    }
+
+    @Nullable
+    public static <T extends Keyed> T getByKey(@NotNull RegistryType<T> registryType, @NotNull NightKey key) {
+        return getByKey(registryType, key.toBukkit());
     }
 
     @Nullable
@@ -147,9 +161,6 @@ public class BukkitThing {
 
     @NotNull
     public static <T extends Keyed> Set<T> getAll(@NotNull RegistryType<T> registryType) {
-        if (Version.isBehind(Version.V1_20_R2)) {
-            return StreamSupport.stream(registryType.getRegistry().spliterator(), false).collect(Collectors.toSet());
-        }
         return registryType.getRegistry().stream().collect(Collectors.toSet());
     }
 
@@ -187,7 +198,7 @@ public class BukkitThing {
 
     @NotNull
     public static String getAsString(@NotNull NamespacedKey key) {
-        return Version.isPaper() ? key.asString() : key.getNamespace() + DEFAULT_SEPARATOR + key.getKey();
+        return Version.isPaper() ? key.asString() : key.getNamespace() + NightKey.DELIMITER + key.getKey();
     }
 
 
@@ -219,9 +230,6 @@ public class BukkitThing {
 
     @NotNull
     public static Set<PotionEffectType> getEffectTypes() {
-        if (Version.isBehind(Version.V1_20_R2)) {
-            return Stream.of(PotionEffectType.values()).collect(Collectors.toSet());
-        }
         return getAll(RegistryType.MOB_EFFECT);
     }
 
@@ -260,7 +268,13 @@ public class BukkitThing {
     }
 
     @Nullable
+    @Deprecated
     public static PotionEffectType getPotionEffect(@NotNull String name) {
+        return getEffectType(name);
+    }
+
+    @Nullable
+    public static PotionEffectType getEffectType(@NotNull String name) {
         return getByString(RegistryType.MOB_EFFECT, name);
     }
 
@@ -271,9 +285,6 @@ public class BukkitThing {
 
     @Nullable
     public static Sound getSound(@NotNull String name) {
-//        if (Version.isBehind(Version.MC_1_21_3)) {
-//            return Sound.valueOf(name.toUpperCase());
-//        }
         return getByString(RegistryType.SOUND, name);
     }
 

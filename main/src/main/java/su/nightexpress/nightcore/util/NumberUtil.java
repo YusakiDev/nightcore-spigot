@@ -7,7 +7,10 @@ import su.nightexpress.nightcore.util.number.NumberShortcut;
 import su.nightexpress.nightcore.util.wrapper.UniFormatter;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.TreeMap;
 
 public class NumberUtil {
 
@@ -100,6 +103,11 @@ public class NumberUtil {
         return Math.abs(getDoubleCompact(input));
     }
 
+    @NotNull
+    public static Optional<Double> parseDecimalCompact(@NotNull String input) {
+        return parseCompact(input);
+    }
+
     public static double getIntCompact(@NotNull String input) {
         return parseIntCompact(input).orElse(0);
     }
@@ -108,6 +116,7 @@ public class NumberUtil {
         return Math.abs(getIntCompact(input));
     }
 
+    @NotNull
     public static Optional<Integer> parseIntCompact(@NotNull String input) {
         return parseCompact(input).map(Double::intValue);
     }
@@ -183,16 +192,34 @@ public class NumberUtil {
         return getDoubleAbs(input, defaultValue);
     }
 
+    @Deprecated
     public static double getDoubleAbs(@NotNull String input) {
         return getDoubleAbs(input, 0D);
     }
 
+    @Deprecated
     public static double getDoubleAbs(@NotNull String input, double defaultValue) {
         return Math.abs(getAnyDouble(input, defaultValue));
     }
 
+    @Deprecated
     public static double getAnyDouble(@NotNull String input, double defaultValue) {
         return parseDouble(input).orElse(defaultValue);
+    }
+
+    @Deprecated
+    public static float getFloatAbs(@NotNull String input) {
+        return getFloatAbs(input, 0f);
+    }
+
+    @Deprecated
+    public static float getFloatAbs(@NotNull String input, float defaultValue) {
+        return Math.abs(getFloat(input, defaultValue));
+    }
+
+    @Deprecated
+    public static float getFloat(@NotNull String input, float defaultValue) {
+        return parseFloat(input).orElse(defaultValue);
     }
 
     @Deprecated
@@ -205,53 +232,41 @@ public class NumberUtil {
         return getIntegerAbs(input, defaultValue);
     }
 
+    @Deprecated
     public static int getIntegerAbs(@NotNull String input) {
         return getIntegerAbs(input, 0);
     }
 
+    @Deprecated
     public static int getIntegerAbs(@NotNull String input, int defaultValue) {
         return Math.abs(getAnyInteger(input, defaultValue));
     }
 
+    @Deprecated
     public static int getAnyInteger(@NotNull String input, int defaultValue) {
         return parseInteger(input).orElse(defaultValue);
     }
 
     @NotNull
+    @Deprecated
     public static Optional<Integer> parseInteger(@NotNull String input) {
-        try {
-            return Optional.of(Integer.parseInt(input));
-        }
-        catch (NumberFormatException exception) {
-            return Optional.empty();
-        }
+        return Numbers.parseInteger(input);
     }
 
     @NotNull
+    @Deprecated
     public static Optional<Double> parseDouble(@NotNull String input) {
-        try {
-            double amount = Double.parseDouble(input);
-            if (!Double.isNaN(amount) && !Double.isInfinite(amount)) {
-                return Optional.of(amount);
-            }
-            return Optional.empty();
-        }
-        catch (NumberFormatException exception) {
-            return Optional.empty();
-        }
+        return Numbers.parseDouble(input);
     }
 
-    public static int[] getIntArray(@NotNull String str) {
-        String[] split = str.split(",");
-        int[] array = new int[split.length];
-        for (int index = 0; index < split.length; index++) {
-            try {
-                array[index] = Integer.parseInt(split[index].trim());
-            }
-            catch (NumberFormatException exception) {
-                array[index] = 0;
-            }
-        }
-        return array;
+    @NotNull
+    @Deprecated
+    public static Optional<Float> parseFloat(@NotNull String input) {
+        return Numbers.parseFloat(input);
+    }
+
+    @Deprecated
+    public static int[] getIntArray(@NotNull String string) {
+        return ArrayUtil.parseIntArray(string);
     }
 }

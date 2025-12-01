@@ -14,14 +14,15 @@ import su.nightexpress.nightcore.config.FileConfig;
 import su.nightexpress.nightcore.config.Writeable;
 import su.nightexpress.nightcore.language.entry.LangItem;
 import su.nightexpress.nightcore.language.entry.LangUIButton;
+import su.nightexpress.nightcore.locale.entry.IconLocale;
 import su.nightexpress.nightcore.ui.menu.item.MenuItem;
 import su.nightexpress.nightcore.util.BukkitThing;
 import su.nightexpress.nightcore.util.NumberUtil;
 import su.nightexpress.nightcore.util.placeholder.Replacer;
+import su.nightexpress.nightcore.util.profile.CachedProfile;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -146,21 +147,6 @@ public class NightItem implements Writeable {
         return stack;
     }
 
-    /**
-     * Updates ItemStack's properties that are potentially to block the server's main thread, such as PlayerProfile in PLAYER_HEAD items.
-     * @return a completable future that gets completed with the updated ItemStack properties once it is available.
-     */
-    @NotNull
-    public CompletableFuture<ItemStack> getItemStackUpdated() {
-        NightProfile profile = this.getPlayerProfile();
-        if (profile == null) return CompletableFuture.supplyAsync(this::getItemStack);
-
-        return profile.update().thenCompose(updated -> {
-            this.meta.setPlayerProfile(updated);
-            return CompletableFuture.supplyAsync(this::getItemStack);
-        });
-    }
-
     @NotNull
     public NightMeta getMeta() {
         return this.meta;
@@ -187,6 +173,11 @@ public class NightItem implements Writeable {
     public NightItem setAmount(int amount) {
         this.amount = NumberUtil.clamp(amount, 1, this.material.getMaxStackSize());
         return this;
+    }
+
+    @Nullable
+    public Replacer getReplacer() {
+        return this.meta.getReplacer();
     }
 
     @NotNull
@@ -225,8 +216,15 @@ public class NightItem implements Writeable {
     }
 
     @NotNull
+    @Deprecated
     public NightItem localized(@NotNull LangUIButton langUIButton) {
         this.meta.localized(langUIButton);
+        return this;
+    }
+
+    @NotNull
+    public NightItem localized(@NotNull IconLocale locale) {
+        this.meta.localized(locale);
         return this;
     }
 
@@ -303,7 +301,7 @@ public class NightItem implements Writeable {
 //    }
 
     @Nullable
-    public NightProfile getPlayerProfile() {
+    public CachedProfile getPlayerProfile() {
         return this.meta.getPlayerProfile();
     }
 
@@ -321,6 +319,12 @@ public class NightItem implements Writeable {
 
     @NotNull
     public NightItem setPlayerProfile(@Nullable NightProfile profile) {
+        this.meta.setPlayerProfile(profile);
+        return this;
+    }
+
+    @NotNull
+    public NightItem setPlayerProfile(@Nullable CachedProfile profile) {
         this.meta.setPlayerProfile(profile);
         return this;
     }

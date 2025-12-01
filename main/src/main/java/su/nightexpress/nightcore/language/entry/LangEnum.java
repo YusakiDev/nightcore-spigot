@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+@Deprecated
 public class LangEnum<E extends Enum<E>> implements LangElement {
 
     private final String path;
@@ -23,7 +24,7 @@ public class LangEnum<E extends Enum<E>> implements LangElement {
         this.path = path;
         this.clazz = clazz;
         this.defaultsMap = defaultsMap;
-        this.localeMap = new HashMap<>();
+        this.localeMap = new HashMap<>(defaultsMap);
     }
 
     @NotNull

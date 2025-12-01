@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Deprecated
 public class Dialog {
 
     private static final int DEFAULT_TIMEOUT = 30;
@@ -113,7 +114,17 @@ public class Dialog {
     }
 
     @NotNull
+    public static Builder builder(@NotNull MenuViewer viewer, @NotNull String prompt, @NotNull DialogHandler handler) {
+        return builder(viewer.getPlayer(), prompt, handler);
+    }
+
+    @NotNull
     public static Builder builder(@NotNull Player player, @NotNull LangString prompt, @NotNull DialogHandler handler) {
+        return builder(player, handler).setPrompt(prompt);
+    }
+
+    @NotNull
+    public static Builder builder(@NotNull Player player, @NotNull String prompt, @NotNull DialogHandler handler) {
         return builder(player, handler).setPrompt(prompt);
     }
 
@@ -127,6 +138,7 @@ public class Dialog {
         return new Builder(player, handler);
     }
 
+    @Deprecated
     public static class Builder {
 
         private final Player player;

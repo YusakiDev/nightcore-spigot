@@ -2,16 +2,17 @@ package su.nightexpress.nightcore;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
-
-import com.tcoded.folialib.FoliaLib;
-import com.tcoded.folialib.wrapper.task.WrappedTask;
-
 import su.nightexpress.nightcore.command.CommandManager;
 import su.nightexpress.nightcore.command.api.NightPluginCommand;
 import su.nightexpress.nightcore.config.FileConfig;
 import su.nightexpress.nightcore.config.PluginDetails;
 import su.nightexpress.nightcore.language.LangManager;
+import su.nightexpress.nightcore.locale.LangContainer;
+import su.nightexpress.nightcore.locale.LangElement;
+import su.nightexpress.nightcore.ui.inventory.MenuRegistry;
 import su.nightexpress.nightcore.util.wrapper.UniTask;
 
 import java.util.function.Consumer;
@@ -19,10 +20,6 @@ import java.util.function.Consumer;
 public interface NightCorePlugin extends Plugin {
 
     //boolean isEngine();
-    
-    default boolean isCore() {
-        return this instanceof NightCore;
-    }
 
     void enable();
 
@@ -36,6 +33,7 @@ public interface NightCorePlugin extends Plugin {
     @Override
     @NotNull FileConfig getConfig();
 
+    @Deprecated
     @NotNull FileConfig getLang();
 
     @NotNull PluginDetails getDetails();
@@ -43,6 +41,16 @@ public interface NightCorePlugin extends Plugin {
     void extractResources(@NotNull String jarPath);
 
     void extractResources(@NotNull String jarParh, @NotNull String toPath);
+
+    /**
+     * Saves and loads {@link LangElement} objects from the provided {@link LangContainer} object into the lang config file according to selected
+     * language during the "enable" plugin's phase if the same can not be achieved through {@link NightPlugin#registerLang(Class)}
+     * <br>
+     * <b>Note:</b> This can not be used outside of the {@link NightPlugin#enable()} phase.
+     * @param langContainer LangContainer object with some LangElement fields defined.
+     * @see NightPlugin#registerLang(Class)
+     */
+    void injectLang(@NotNull LangContainer langContainer);
 
     @NotNull
     default String getNameLocalized() {
@@ -60,6 +68,7 @@ public interface NightCorePlugin extends Plugin {
     }
 
     @NotNull
+    @Deprecated
     default String getLanguage() {
         return this.getDetails().getLanguage();
     }
@@ -80,13 +89,17 @@ public interface NightCorePlugin extends Plugin {
         this.info("[DEBUG] " + msg);
     }
 
+    @Deprecated
     @NotNull LangManager getLangManager();
 
+    @Deprecated
     @NotNull CommandManager getCommandManager();
 
+    @NotNull MenuRegistry getMenuRegistry();
+
     @NotNull
-    default FoliaLib getFoliaLib() {
-        return ((NightPlugin) this).getFoliaLib();
+    default BukkitScheduler getScheduler() {
+        return this.getServer().getScheduler();
     }
 
     @NotNull
@@ -94,36 +107,30 @@ public interface NightCorePlugin extends Plugin {
         return this.getServer().getPluginManager();
     }
 
-    default void runTask(@NotNull Consumer<WrappedTask> consumer) {
-        this.getFoliaLib().getScheduler().runNextTick(consumer);
+    void runTask(@NotNull Runnable runnable);
+
+    default void runTask(@NotNull Consumer<BukkitTask> consumer) {
+        this.getScheduler().runTask(this, consumer);
     }
 
-    default void runTaskAsync(@NotNull Consumer<WrappedTask> consumer) {
-        this.getFoliaLib().getScheduler().runAsync(consumer);
+    default void runTaskAsync(@NotNull Consumer<BukkitTask> consumer) {
+        this.getScheduler().runTaskAsynchronously(this, consumer);
     }
 
-    default void runTaskLater(@NotNull Consumer<WrappedTask> consumer, long delay) {
-        this.getFoliaLib().getScheduler().runLater(consumer, delay);
+    default void runTaskLater(@NotNull Consumer<BukkitTask> consumer, long delay) {
+        this.getScheduler().runTaskLater(this, consumer, delay);
     }
 
-    default void runTaskLaterAsync(@NotNull Consumer<WrappedTask> consumer, long delay) {
-        this.getFoliaLib().getScheduler().runLaterAsync(consumer, delay);
+    default void runTaskLaterAsync(@NotNull Consumer<BukkitTask> consumer, long delay) {
+        this.getScheduler().runTaskLaterAsynchronously(this, consumer, delay);
     }
 
-    default void runTaskTimer(@NotNull Consumer<WrappedTask> consumer, long delay, long interval) {
-        this.getFoliaLib().getScheduler().runTimer(consumer, delay, interval);
+    default void runTaskTimer(@NotNull Consumer<BukkitTask> consumer, long delay, long interval) {
+        this.getScheduler().runTaskTimer(this, consumer, delay, interval);
     }
 
-    default void runTaskTimerAsync(@NotNull Consumer<WrappedTask> consumer, long delay, long interval) {
-        this.getFoliaLib().getScheduler().runTimerAsync(consumer, delay, interval);
-    }
-
-    default void runAtEntity(@NotNull org.bukkit.entity.Entity entity, @NotNull Consumer<WrappedTask> consumer) {
-        this.getFoliaLib().getScheduler().runAtEntity(entity, consumer);
-    }
-
-    default void runAtLocation(@NotNull org.bukkit.Location location, @NotNull Consumer<WrappedTask> consumer) {
-        this.getFoliaLib().getScheduler().runAtLocation(location, consumer);
+    default void runTaskTimerAsync(@NotNull Consumer<BukkitTask> consumer, long delay, long interval) {
+        this.getScheduler().runTaskTimerAsynchronously(this, consumer, delay, interval);
     }
 
     @NotNull

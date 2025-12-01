@@ -4,22 +4,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import su.nightexpress.nightcore.NightCore;
-import su.nightexpress.nightcore.command.experimental.CommandContext;
-import su.nightexpress.nightcore.command.experimental.argument.ArgumentTypes;
-import su.nightexpress.nightcore.command.experimental.argument.ParsedArguments;
-import su.nightexpress.nightcore.command.experimental.impl.ReloadCommand;
-import su.nightexpress.nightcore.command.experimental.node.ChainedNode;
-import su.nightexpress.nightcore.command.experimental.node.DirectNode;
-import su.nightexpress.nightcore.core.CoreLang;
+import su.nightexpress.nightcore.commands.Arguments;
+import su.nightexpress.nightcore.commands.Commands;
+import su.nightexpress.nightcore.commands.builder.HubNodeBuilder;
+import su.nightexpress.nightcore.commands.context.CommandContext;
+import su.nightexpress.nightcore.commands.context.ParsedArguments;
 import su.nightexpress.nightcore.core.CorePerms;
-import su.nightexpress.nightcore.util.ItemNbt;
+import su.nightexpress.nightcore.core.config.CoreLang;
+import su.nightexpress.nightcore.integration.permission.PermissionBridge;
 import su.nightexpress.nightcore.util.ItemTag;
 import su.nightexpress.nightcore.util.Players;
-import su.nightexpress.nightcore.util.Plugins;
-import su.nightexpress.nightcore.util.text.NightMessage;
 
-import static su.nightexpress.nightcore.util.Placeholders.TAG_LINE_BREAK;
-import static su.nightexpress.nightcore.util.text.tag.Tags.*;
+import static su.nightexpress.nightcore.util.text.night.wrapper.TagWrappers.*;
 
 public class CoreCommands {
 
@@ -27,52 +23,59 @@ public class CoreCommands {
 
     private static final String ARG_PLAYER = "player";
 
-    public static void load(@NotNull NightCore core) {
-        ChainedNode root = core.getRootNode();
-
-        if (Plugins.hasPermissionsProvider()) {
-            root.addChildren(DirectNode.builder(core, CMD_CHECKPERM)
+    public static void load(@NotNull NightCore core, @NotNull HubNodeBuilder builder) {
+        if (PermissionBridge.hasProvider()) {
+            builder.branch(Commands.literal(CMD_CHECKPERM)
                 .permission(CorePerms.COMMAND_CHECK_PERM)
                 .description(CoreLang.COMMAND_CHECKPERM_DESC)
-                .withArgument(ArgumentTypes.player(ARG_PLAYER).required())
+                .withArguments(Arguments.player(ARG_PLAYER))
                 .executes(CoreCommands::checkPermissions)
             );
         }
 
-        root.addChildren(DirectNode.builder(core, "dumpitem")
+        builder.branch(Commands.literal("dumpitem")
             .playerOnly()
             .permission(CorePerms.COMMAND_DUMP_ITEM)
             .description(CoreLang.COMMAND_DUMPITEM_DESC)
             .executes(CoreCommands::dumpItem)
         );
 
-        root.addChildren(ReloadCommand.builder(core, CorePerms.COMMAND_RELOAD));
+        builder.branch(Commands.literal("reload")
+            .description(CoreLang.COMMAND_RELOAD_DESC)
+            .permission(CorePerms.COMMAND_RELOAD)
+            .executes((context, arguments) -> {
+                core.doReload(context.getSender());
+                return true;
+            })
+        );
     }
 
     private static boolean checkPermissions(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {
-        Player player = arguments.getPlayerArgument(ARG_PLAYER);
+        Player player = arguments.getPlayer(ARG_PLAYER);
         String builder =
-            BOLD.wrap(LIGHT_YELLOW.wrap("Permissions report for ") + LIGHT_ORANGE.wrap(player.getName() + ":")) +
-                TAG_LINE_BREAK +
-                LIGHT_ORANGE.wrap("▪ " + LIGHT_YELLOW.wrap("Primary Group: ") + Players.getPrimaryGroup(player)) +
-                TAG_LINE_BREAK +
-                LIGHT_ORANGE.wrap("▪ " + LIGHT_YELLOW.wrap("All Groups: ") + String.join(", ", Players.getInheritanceGroups(player))) +
-                TAG_LINE_BREAK +
-                LIGHT_ORANGE.wrap("▪ " + LIGHT_YELLOW.wrap("Prefix: ") + Players.getRawPrefix(player)) +
-                TAG_LINE_BREAK +
-                LIGHT_ORANGE.wrap("▪ " + LIGHT_YELLOW.wrap("Suffix: ") + Players.getRawSuffix(player));
-        NightMessage.create(builder).send(context.getSender());
+            BOLD.wrap(SOFT_YELLOW.wrap("Permissions report for ") + SOFT_ORANGE.wrap(player.getName() + ":")) +
+                BR +
+                SOFT_ORANGE.wrap("▪ " + SOFT_YELLOW.wrap("Primary Group: ") + Players.getPrimaryGroup(player)) +
+                BR +
+                SOFT_ORANGE.wrap("▪ " + SOFT_YELLOW.wrap("All Groups: ") + String.join(", ", Players.getInheritanceGroups(player))) +
+                BR +
+                SOFT_ORANGE.wrap("▪ " + SOFT_YELLOW.wrap("Prefix: ") + Players.getRawPrefix(player)) +
+                BR +
+                SOFT_ORANGE.wrap("▪ " + SOFT_YELLOW.wrap("Suffix: ") + Players.getRawSuffix(player));
+        Players.sendMessage(context.getSender(), builder);
         return true;
     }
 
     private static boolean dumpItem(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {
         Player player = context.getPlayerOrThrow();
         ItemStack itemStack = player.getInventory().getItemInMainHand();
-        ItemTag tag = ItemNbt.getTag(itemStack);
+        ItemTag tag = ItemTag.of(itemStack); // TODO try catch
 
         player.sendMessage("=".repeat(10) + " DUMP ITEM " + "=".repeat(10));
-        player.sendMessage(tag == null ? "null": tag.getTag());
+        player.sendMessage(tag.getTag());
 
         return true;
     }
+
+
 }

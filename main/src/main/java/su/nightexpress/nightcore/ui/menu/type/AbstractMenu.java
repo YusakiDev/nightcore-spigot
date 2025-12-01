@@ -8,12 +8,10 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MenuType;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import su.nightexpress.nightcore.Engine;
 import su.nightexpress.nightcore.NightPlugin;
-import su.nightexpress.nightcore.api.event.MenuOpenEvent;
+import su.nightexpress.nightcore.event.MenuOpenEvent;
 import su.nightexpress.nightcore.ui.dialog.Dialog;
 import su.nightexpress.nightcore.ui.dialog.DialogManager;
 import su.nightexpress.nightcore.ui.menu.Menu;
@@ -23,16 +21,13 @@ import su.nightexpress.nightcore.ui.menu.click.ClickResult;
 import su.nightexpress.nightcore.ui.menu.data.Linked;
 import su.nightexpress.nightcore.ui.menu.item.ItemHandler;
 import su.nightexpress.nightcore.ui.menu.item.MenuItem;
-import su.nightexpress.nightcore.util.ItemUtil;
 import su.nightexpress.nightcore.util.Lists;
 import su.nightexpress.nightcore.util.Placeholders;
+import su.nightexpress.nightcore.util.bridge.Software;
 import su.nightexpress.nightcore.util.bukkit.NightItem;
-import su.nightexpress.nightcore.util.text.NightMessage;
+import su.nightexpress.nightcore.util.text.night.NightMessage;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class AbstractMenu<P extends NightPlugin> implements Menu {
@@ -153,7 +148,7 @@ public abstract class AbstractMenu<P extends NightPlugin> implements Menu {
             if (this.isApplyPlaceholderAPI()) {
                 title = Placeholders.forPlayerWithPAPI(player).apply(title);
             }
-            view = Engine.software().createView(this.menuType, NightMessage.parse(title), player);
+            view = Software.get().createView(this.menuType, NightMessage.parse(title), player);
             viewer.assignInventory(view);
             player.openInventory(view);
         }
@@ -184,17 +179,6 @@ public abstract class AbstractMenu<P extends NightPlugin> implements Menu {
             for (int slot : menuItem.getSlots()) {
                 if (slot < 0 || slot >= inventory.getSize()) continue;
                 inventory.setItem(slot, itemStack);
-
-                // Do not yet use new NightItem#getItemStackUpdated method here, until we ensure there are no inventory content relies in #onReady.
-                if (item.getPlayerProfile() != null) {
-                    item.getPlayerProfile().update().thenAccept(updated -> {
-                        MenuItem overlap = this.getItem(viewer, slot);
-                        if (overlap != null && overlap != menuItem && overlap.getPriority() >= menuItem.getPriority()) return;
-
-                        ItemUtil.editMeta(itemStack, SkullMeta.class, updated::apply);
-                        inventory.setItem(slot, itemStack);
-                    });
-                }
             }
         });
 
@@ -317,6 +301,7 @@ public abstract class AbstractMenu<P extends NightPlugin> implements Menu {
     }
 
     @Override
+    @Deprecated
     public void handleInput(@NotNull Dialog.Builder builder) {
         Dialog dialog = builder.build();
         DialogManager.startDialog(dialog);

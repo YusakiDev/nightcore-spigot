@@ -18,37 +18,60 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import su.nightexpress.nightcore.NightCorePlugin;
+import su.nightexpress.nightcore.configuration.ConfigProperty;
+import su.nightexpress.nightcore.configuration.ConfigType;
 import su.nightexpress.nightcore.util.*;
 import su.nightexpress.nightcore.util.bukkit.NightItem;
 import su.nightexpress.nightcore.util.bukkit.NightSound;
 import su.nightexpress.nightcore.util.sound.AbstractSound;
-import su.nightexpress.nightcore.util.text.NightMessage;
+import su.nightexpress.nightcore.util.text.night.NightMessage;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.IntStream;
+import java.util.function.Consumer;
 
 public class FileConfig extends YamlConfiguration {
 
     public static final String EXTENSION = ".yml";
 
-    private final File    file;
-    private       boolean changed;
+    private final Path path;
 
+    private boolean changed;
+
+    @Deprecated
     public FileConfig(@NotNull String path, @NotNull String file) {
         this(new File(path, file));
     }
 
+    @Deprecated
     public FileConfig(@NotNull File file) {
         this.changed = false;
         this.options().width(512);
 
         FileUtil.create(file);
-        this.file = file;
+        this.path = file.toPath();
         this.reload();
+    }
+
+    private FileConfig(@NotNull Path path) {
+        this.path = path;
+        this.changed = false;
+        this.options().width(512);
+    }
+
+    @NotNull
+    public static FileConfig load(@NotNull String path, @NotNull String file) {
+        return load(Path.of(path, file));
+    }
+
+    @NotNull
+    public static FileConfig load(@NotNull Path path) {
+        FileConfig config = new FileConfig(path);
+        config.load();
+        return config;
     }
 
     public static boolean isConfig(@NotNull File file) {
@@ -71,6 +94,7 @@ public class FileConfig extends YamlConfiguration {
     }
 
     @NotNull
+    @Deprecated
     public static FileConfig loadOrExtract(@NotNull NightCorePlugin plugin, @NotNull String path, @NotNull String file) {
         if (!path.endsWith("/")) {
             path += "/";
@@ -79,6 +103,7 @@ public class FileConfig extends YamlConfiguration {
     }
 
     @NotNull
+    @Deprecated
     public static FileConfig loadOrExtract(@NotNull NightCorePlugin plugin, @NotNull String filePath) {
         if (!filePath.startsWith("/")) {
             filePath = "/" + filePath;
@@ -111,19 +136,46 @@ public class FileConfig extends YamlConfiguration {
     }
 
     public static void initializeOptions(@NotNull Class<?> clazz, @NotNull FileConfig config) {
-        for (ConfigValue<?> value : Reflex.getFields(clazz, ConfigValue.class)) {
+        for (ConfigValue<?> value : Reflex.getStaticFields(clazz, ConfigValue.class, false)) {
             value.read(config);
         }
     }
 
     @NotNull
+    @Deprecated
     public File getFile() {
-        return this.file;
+        return this.path.toFile();
+    }
+
+    @NotNull
+    public Path getPath() {
+        return this.path;
+    }
+
+    @Deprecated
+    public boolean reload() {
+        this.load();
+        return true;
+    }
+
+    public void load() {
+        FileUtil.createFileIfNotExists(this.path);
+        this.changed = false;
+
+        //this.load(this.file);
+        try (BufferedReader reader = Files.newBufferedReader(this.path, StandardCharsets.UTF_8)) {
+            this.load(reader);
+        }
+        catch (IOException | InvalidConfigurationException | IllegalArgumentException exception) {
+            exception.printStackTrace();
+        }
     }
 
     public void save() {
-        try {
-            this.save(this.file);
+        FileUtil.createFileIfNotExists(this.path);
+
+        try (BufferedWriter writer = Files.newBufferedWriter(this.path, StandardCharsets.UTF_8)) {
+            writer.write(this.saveToString());
         }
         catch (IOException exception) {
             exception.printStackTrace();
@@ -138,22 +190,41 @@ public class FileConfig extends YamlConfiguration {
         return true;
     }
 
-    public boolean reload() {
-        try {
-            this.load(this.file);
-            this.changed = false;
-            return true;
-        }
-        catch (IOException | InvalidConfigurationException exception) {
-            exception.printStackTrace();
-        }
-        return false;
+    public void edit(@NotNull Consumer<FileConfig> consumer) {
+        consumer.accept(this);
+        this.saveChanges();
     }
 
     public boolean addMissing(@NotNull String path, @Nullable Object val) {
         if (this.contains(path)) return false;
         this.set(path, val);
         return true;
+    }
+
+    @NotNull
+    public <T> T get(@NotNull ConfigProperty<T> property) {
+        return property.read(this);
+    }
+
+    @NotNull
+    public <T> T get(@NotNull ConfigType<T> type, @NotNull String path, @NotNull T def, @Nullable String... comments) {
+        if (!this.contains(path)) {
+            type.write(this, path, def);
+            this.setComments(path, comments);
+        }
+        return type.read(this, path, def);
+    }
+
+    public void setArray(@NotNull String path, double[] array) {
+        this.set(path, array == null ? null : ArrayUtil.arrayToString(array));
+    }
+
+    public void setArray(@NotNull String path, int[] array) {
+        this.set(path, array == null ? null : ArrayUtil.arrayToString(array));
+    }
+
+    public void setArray(@NotNull String path, long[] array) {
+        this.set(path, array == null ? null : ArrayUtil.arrayToString(array));
     }
 
     @Override
@@ -182,16 +253,16 @@ public class FileConfig extends YamlConfiguration {
     }
 
     public void setComments(@NotNull String path, @Nullable String... comments) {
-        this.setComments(path, Arrays.asList(comments));
+        this.setComments(path, comments == null ? null : Arrays.asList(comments));
     }
 
     public void setInlineComments(@NotNull String path, @Nullable String... comments) {
-        this.setInlineComments(path, Arrays.asList(comments));
+        this.setInlineComments(path, comments == null ? null : Arrays.asList(comments));
     }
 
     @Override
     public void setComments(@NotNull String path, @Nullable List<String> comments) {
-        if (this.getComments(path).equals(comments)) return;
+        if (!this.areCommentsDifferent(this.getComments(path), comments)) return;
 
         super.setComments(path, comments);
         this.changed = true;
@@ -199,7 +270,18 @@ public class FileConfig extends YamlConfiguration {
 
     @Override
     public void setInlineComments(@NotNull String path, @Nullable List<String> comments) {
+        if (!this.areCommentsDifferent(this.getInlineComments(path), comments)) return;
+
         super.setInlineComments(path, comments);
+        this.changed = true;
+    }
+
+    private boolean areCommentsDifferent(@NotNull List<String> current, @Nullable List<String> comments) {
+        if ((comments == null || comments.isEmpty())) {
+            return !current.isEmpty();
+        }
+
+        return !new HashSet<>(current).equals(new HashSet<>(comments));
     }
 
     public boolean remove(@NotNull String path) {
@@ -242,21 +324,36 @@ public class FileConfig extends YamlConfiguration {
         return raw == null ? null : LocationUtil.deserialize(raw);
     }
 
+    @Deprecated
+    public void setIntArray(@NotNull String path, int[] arr) {
+        this.setArray(path, arr);
+    }
+
     public int[] getIntArray(@NotNull String path) {
         return getIntArray(path, new int[0]);
     }
 
-    public int[] getIntArray(@NotNull String path, int[] def) {
+    public int[] getIntArray(@NotNull String path, int[] defaultArray) {
         String str = this.getString(path);
-        return str == null ? def : NumberUtil.getIntArray(str);
+        return str == null ? defaultArray : ArrayUtil.parseIntArray(str);
     }
 
-    public void setIntArray(@NotNull String path, int[] arr) {
-        if (arr == null) {
-            this.set(path, null);
-            return;
-        }
-        this.set(path, String.join(",", IntStream.of(arr).boxed().map(String::valueOf).toList()));
+    public double[] getDoubleArray(@NotNull String path) {
+        return getDoubleArray(path, new double[0]);
+    }
+
+    public double[] getDoubleArray(@NotNull String path, double[] defaultArray) {
+        String str = this.getString(path);
+        return str == null ? defaultArray : ArrayUtil.parseDoubleArray(str);
+    }
+
+    public long[] getLongArray(@NotNull String path) {
+        return getLongArray(path, new long[0]);
+    }
+
+    public long[] getLongArray(@NotNull String path, long[] defaultArray) {
+        String str = this.getString(path);
+        return str == null ? defaultArray : ArrayUtil.parseLongArray(str);
     }
 
     @NotNull
@@ -271,11 +368,7 @@ public class FileConfig extends YamlConfiguration {
     }
 
     public void setStringArray(@NotNull String path, String[] arr) {
-        if (arr == null) {
-            this.set(path, null);
-            return;
-        }
-        this.set(path, String.join(",", arr));
+        this.set(path, arr == null ? null : String.join(",", arr));
     }
 
     @Nullable
@@ -408,8 +501,10 @@ public class FileConfig extends YamlConfiguration {
         }
 
         String name = this.getString(path + "Name");
-        meta.setDisplayName(name != null ? NightMessage.asLegacy(name) : null);
-        meta.setLore(NightMessage.asLegacy(this.getStringList(path + "Lore")));
+/*        meta.setDisplayName(name != null ? NightMessage.asLegacy(name) : null);
+        meta.setLore(NightMessage.asLegacy(this.getStringList(path + "Lore")));*/
+        ItemUtil.setCustomName(meta, name == null ? null : NightMessage.parse(name));
+        ItemUtil.setLore(meta, this.getStringList(path + "Lore"));
 
         for (String sKey : this.getSection(path + "Enchants")) {
             Enchantment enchantment = BukkitThing.getEnchantment(sKey);

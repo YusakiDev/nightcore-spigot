@@ -11,8 +11,10 @@ import su.nightexpress.nightcore.util.bridge.wrapper.HoverEventType;
 import static su.nightexpress.nightcore.util.Placeholders.*;
 import static su.nightexpress.nightcore.util.text.tag.Tags.*;
 
+@Deprecated
 public class CoreLang {
 
+    @Deprecated
     public static final LangEnum<ClickKey> CLICK_KEY = LangEnum.of("ClickKey", ClickKey.class, map -> {
         map.put(ClickKey.LEFT, "L-Click");
         map.put(ClickKey.RIGHT, "R-Click");
@@ -162,12 +164,15 @@ public class CoreLang {
             + " to leave input mode."),
         "");
 
+    @Deprecated
     public static final LangString DIALOG_HEADER = LangString.of("Dialog.Header",
         LIGHT_YELLOW.wrap(GENERIC_TIME));
 
+    @Deprecated
     public static final LangString DIALOG_DEFAULT_PROMPT = LangString.of("Dialog.DefaultPrompt",
         LIGHT_GRAY.wrap("Enter " + LIGHT_GREEN.wrap("[Value]")));
 
+    @Deprecated
     public static final LangText DIALOG_INFO_EXIT = LangText.of("Dialog.Info.Exit",
         TAG_NO_PREFIX,
         "",
@@ -188,23 +193,27 @@ public class CoreLang {
     @Deprecated
     public static final LangString EDITOR_INPUT_ERROR_GENERIC     = LangString.of("Editor.Input.Error.Generic", GRAY.wrap("Invalid value!"));
 
-
+    @Deprecated
     public static final LangString EDITOR_BUTTON_NAME = LangString.of("Editor.Button.Name",
         LIGHT_YELLOW.wrap(BOLD.wrap(GENERIC_NAME))
     );
 
+    @Deprecated
     public static final LangString EDITOR_BUTTON_DESCRIPTION = LangString.of("Editor.Button.Description",
         GRAY.wrap(GENERIC_ENTRY)
     );
 
+    @Deprecated
     public static final LangString EDITOR_BUTTON_CURRENT_DEFAULT_NAME = LangString.of("Editor.Button.Current.DefaultName",
         "Current"
     );
 
+    @Deprecated
     public static final LangString EDITOR_BUTTON_CURRENT_INFO = LangString.of("Editor.Button.Current.Info",
         LIGHT_YELLOW.wrap("➥ " + GRAY.wrap(GENERIC_NAME + ": ") + GENERIC_VALUE)
     );
 
+    @Deprecated
     public static final LangString EDITOR_BUTTON_CLICK_KEY = LangString.of("Editor.Button.ClickKey",
         LIGHT_YELLOW.wrap("→ " + UNDERLINED.wrap(GENERIC_NAME + " to " + GENERIC_VALUE))
     );

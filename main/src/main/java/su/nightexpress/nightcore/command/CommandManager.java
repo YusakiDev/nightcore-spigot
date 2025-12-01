@@ -17,6 +17,7 @@ import su.nightexpress.nightcore.util.Lists;
 import java.util.HashSet;
 import java.util.Set;
 
+@Deprecated
 public class CommandManager extends SimpleManager<NightPlugin> {
 
     private final Set<NightPluginCommand> commands;
@@ -41,7 +42,6 @@ public class CommandManager extends SimpleManager<NightPlugin> {
 
         if (this.plugin instanceof ImprovedCommands) {
             this.rootCommand = RootCommand.chained(this.plugin, aliases, builder -> builder
-                // TODO Permission?
                 .localized(this.plugin.getNameLocalized())
             );
             this.registerCommand(this.rootCommand);

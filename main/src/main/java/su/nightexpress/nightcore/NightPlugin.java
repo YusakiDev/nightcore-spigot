@@ -1,19 +1,24 @@
 package su.nightexpress.nightcore;
 
-import com.tcoded.folialib.FoliaLib;
+import org.bukkit.command.CommandSender;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import su.nightexpress.nightcore.command.CommandManager;
 import su.nightexpress.nightcore.command.api.NightPluginCommand;
+import su.nightexpress.nightcore.commands.command.NightCommand;
 import su.nightexpress.nightcore.config.FileConfig;
 import su.nightexpress.nightcore.config.PluginDetails;
+import su.nightexpress.nightcore.core.config.CoreLang;
 import su.nightexpress.nightcore.language.LangManager;
+import su.nightexpress.nightcore.locale.LangContainer;
+import su.nightexpress.nightcore.locale.LangRegistry;
 import su.nightexpress.nightcore.menu.impl.AbstractMenu;
 import su.nightexpress.nightcore.ui.menu.MenuRegistry;
 import su.nightexpress.nightcore.util.FileUtil;
-import su.nightexpress.nightcore.util.Plugins;
+import su.nightexpress.nightcore.util.Lists;
 import su.nightexpress.nightcore.util.Reflex;
+import su.nightexpress.nightcore.util.Version;
 import su.nightexpress.nightcore.util.wrapper.UniPermission;
 
 import java.io.File;
@@ -25,9 +30,10 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
     public static final String CONFIG_FILE = "config.yml";
     public static final String ENGINE_FILE = "engine.yml";
 
+    protected NightCommand   rootCommand;
     protected List<Runnable> postLoaders;
-    protected FoliaLib foliaLib;
 
+    protected LangRegistry langRegistry;
     protected LangManager    langManager;
     protected CommandManager commandManager;
 
@@ -37,17 +43,13 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
 
     @Override
     public void onEnable() {
-        this.foliaLib = new FoliaLib(this);
-        
-        if (!Engine.handleEnable(this)) {
+        if (!this.onInit() || !this.checkVersion()) {
+            this.getPluginManager().disablePlugin(this);
             return;
         }
 
-        if (!this.isCore()) {
-            Plugins.getCore().addChildren(this);
-        }
-
         long loadTook = System.currentTimeMillis();
+        this.onStartup();
         this.loadManagers();
         this.info("Plugin loaded in " + (System.currentTimeMillis() - loadTook) + " ms!");
     }
@@ -55,6 +57,22 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
     @Override
     public void onDisable() {
         this.unloadManagers();
+        this.onShutdown();
+    }
+
+    protected boolean onInit() {
+        NightCore.CHILDRENS.add(this);
+        this.info("Powered by " + NightCore.get().getName());
+
+        return true;
+    }
+
+    protected void onStartup() {
+
+    }
+
+    protected void onShutdown() {
+
     }
 
     public void reload() {
@@ -74,6 +92,7 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
     }
 
     @NotNull
+    @Deprecated
     public final FileConfig getLang() {
         return this.langManager.getConfig();
     }
@@ -91,11 +110,24 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
     protected abstract PluginDetails getDefaultDetails();
 
     public void registerPermissions(@NotNull Class<?> clazz) {
-        Reflex.getFields(clazz, UniPermission.class).forEach(permission -> {
+        Reflex.getStaticFields(clazz, UniPermission.class, false).forEach(permission -> {
             if (this.getPluginManager().getPermission(permission.getName()) == null) {
                 this.getPluginManager().addPermission(permission);
             }
         });
+    }
+
+    protected void setupRegistries() {
+        this.langRegistry = new LangRegistry(this);
+        this.langRegistry.setup();
+
+        this.addRegistries();
+
+        this.langRegistry.loadLocale();
+    }
+
+    protected void addRegistries() {
+
     }
 
     protected void setupConfig() {
@@ -118,6 +150,8 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
     }
 
     protected void setupLanguage() {
+        if (this.langRegistry.hasElements()) return; // Do not load if modern lang system present.
+
         this.langManager = new LangManager(this);
         this.langManager.setup();
 
@@ -133,7 +167,13 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
         this.registerPermissions(clazz);
     }
 
+    protected boolean disableCommandManager() {
+        return false;
+    }
+
     protected void setupCommands() {
+        if (this.disableCommandManager()) return;
+
         this.commandManager = new CommandManager(this);
         this.commandManager.setup();
     }
@@ -142,7 +182,8 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
         this.postLoaders = new ArrayList<>(); // Initialize a list for post-loading code.
 
         this.setupConfig();         // Load configuration.
-        this.setupLanguage();       // Load language.
+        this.setupRegistries();     // Load registries so the plugin modules can access them.
+        this.setupLanguage();       // Load legacy language.
         this.setupPermissions();    // Register plugin permissions.
         this.setupCommands();       // Register plugin commands.
 
@@ -150,23 +191,26 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
 
         this.postLoad();            // Load some stuff that needs to be injected after the rest managers.
 
+        if (this.rootCommand != null) this.rootCommand.register();
         this.config.saveChanges();
-        this.getLang().saveChanges();
+        if (this.langManager != null) this.getLang().saveChanges();
+        if (this.langRegistry != null) this.langRegistry.complete();
         this.engineConf.saveChanges();
     }
 
     protected void unloadManagers() {
-        if (this.foliaLib != null) {
-            this.foliaLib.getScheduler().cancelAllTasks();
-        }
+        this.getScheduler().cancelTasks(this);  // Stop all plugin tasks.
+
         this.disable();
 
         AbstractMenu.clearAll(this);            // Close all GUIs.
         MenuRegistry.closeAll();
         HandlerList.unregisterAll(this);        // Unregister all plugin listeners.
 
-        this.commandManager.shutdown();
-        this.langManager.shutdown();
+        if (this.rootCommand != null) this.rootCommand.unregister();
+        if (this.commandManager != null) this.commandManager.shutdown();
+        if (this.langRegistry != null) this.langRegistry.shutdown();
+        if (this.langManager != null) this.langManager.shutdown();
         this.details = null;                           // Reset so it will use default ones on config read.
     }
 
@@ -184,27 +228,43 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
         this.postLoaders.add(runnable);
     }
 
-    @NotNull
-    @Deprecated
-    public final NightPluginCommand getBaseCommand() {
-        return this.getCommandManager().getMainCommand();
+    public void doReload(@NotNull CommandSender sender) {
+        this.reload();
+        CoreLang.PLUGIN_RELOADED.withPrefix(this).send(sender);
     }
 
     @NotNull
+    @Deprecated
+    public final NightPluginCommand getBaseCommand() {
+        return this.commandManager.getMainCommand();
+    }
+
+    @NotNull
+    @Deprecated
     public final LangManager getLangManager() {
         return this.langManager;
     }
 
     @NotNull
+    public final LangRegistry getLangRegistry() {
+        return this.langRegistry;
+    }
+
+    @NotNull
+    @Deprecated
     public final CommandManager getCommandManager() {
         return this.commandManager;
     }
 
-    @NotNull
-    public FoliaLib getFoliaLib() {
-        return this.foliaLib;
+    public void registerLang(@NotNull Class<? extends LangContainer> clazz) {
+        this.langRegistry.register(clazz);
     }
 
+
+    @Override
+    public void injectLang(@NotNull LangContainer langContainer) {
+        this.langRegistry.inject(langContainer);
+    }
 
     @Override
     public void extractResources(@NotNull String jarPath) {
@@ -224,5 +284,43 @@ public abstract class NightPlugin extends JavaPlugin implements NightCorePlugin 
         }
 
         FileUtil.extractResources(this.getFile(), jarPath, destination);
+    }
+
+    @Override
+    public void runTask(@NotNull Runnable runnable) {
+        this.getScheduler().runTask(this, runnable);
+    }
+
+    private boolean checkVersion() {
+        Version current = Version.getCurrent();
+        if (current != Version.UNKNOWN && current.isSupported()) return true;
+
+        this.warn("=".repeat(35));
+
+        if (current == Version.UNKNOWN) {
+            this.warn("WARNING: This plugin is not supposed to run on this server version!");
+            this.warn("If server version is newer than " + Version.values()[Version.values().length - 2] + ", then wait for an update please.");
+            this.warn("The plugin may not work properly.");
+        }
+        else if (current.isDeprecated()) {
+            this.warn("WARNING: You're running an outdated server version (" + current.getLocalized() + ")!");
+            this.warn("This version will no longer be supported in future relases.");
+            this.warn("Please upgrade your server to " + Lists.next(current, (Version::isSupported)).getLocalized() + ".");
+        }
+        else if (current.isDropped()) {
+            this.error("ERROR: You're running an unsupported server version (" + current.getLocalized() + ")!");
+            this.error("Please upgrade your server to " + Lists.next(current, (Version::isSupported)).getLocalized() + ".");
+        }
+
+        this.warn("ABSOLUTELY NO DISCORD SUPPORT WILL BE PROVIDED");
+        this.warn("=".repeat(35));
+
+        return !current.isDropped();
+    }
+
+    @Override
+    @NotNull
+    public su.nightexpress.nightcore.ui.inventory.MenuRegistry getMenuRegistry() {
+        return NightCore.get().getMenuRegistry();
     }
 }
