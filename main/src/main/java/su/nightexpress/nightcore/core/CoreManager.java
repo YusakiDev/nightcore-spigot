@@ -77,14 +77,15 @@ public class CoreManager extends AbstractManager<NightCore> {
 
     private void loadItemIntegrations() {
         this.registerItemProvider(VanillaItemAdapter.INSTANCE);
-        this.registerExternalItemProvider(ItemPlugins.EXCELLENT_CRATES, ExcellentCratesHandler::new);
-        this.registerExternalItemProvider(ItemPlugins.EXCELLENT_CRATES, ECratesCrateAdapter::new);
-        this.registerExternalItemProvider(ItemPlugins.EXCELLENT_CRATES, ECratesKeyAdapter::new);
-        this.registerExternalItemProvider(ItemPlugins.EXECUTABLE_ITEMS, ExecutableItemsAdapter::new);
+        // Disabled: Missing dependencies
+        //this.registerExternalItemProvider(ItemPlugins.EXCELLENT_CRATES, ExcellentCratesHandler::new);
+        //this.registerExternalItemProvider(ItemPlugins.EXCELLENT_CRATES, ECratesCrateAdapter::new);
+        //this.registerExternalItemProvider(ItemPlugins.EXCELLENT_CRATES, ECratesKeyAdapter::new);
+        //this.registerExternalItemProvider(ItemPlugins.EXECUTABLE_ITEMS, ExecutableItemsAdapter::new);
         this.registerExternalItemProvider(ItemPlugins.ITEMS_ADDER, ItemsAdderAdapter::new);
         this.registerExternalItemProvider(ItemPlugins.MMOITEMS, MMOItemsAdapter::new);
-        this.registerExternalItemProvider(ItemPlugins.NEXO, NexoAdapter::new);
-        this.registerExternalItemProvider(ItemPlugins.ORAXEN, OraxenAdapter::new);
+        //this.registerExternalItemProvider(ItemPlugins.NEXO, NexoAdapter::new);
+        //this.registerExternalItemProvider(ItemPlugins.ORAXEN, OraxenAdapter::new);
     }
 
     private <T> boolean registerExternalItemProvider(@NotNull String pluginName, @NotNull Supplier<ItemAdapter<T>> supplier) {
